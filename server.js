@@ -1,52 +1,52 @@
-require('dotenv').config();            // Load .env first
 const express = require('express');
-const cors = require('cors');
 const { Pool } = require('pg');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1) Enable JSON body parsing (in case you expand to POST later)
-app.use(express.json());
+// Allow frontend to call backend
+app.use(cors());
 
-// 2) Configure CORS to allow only your frontend origin
-const FRONTEND_URL = process.env.FRONTEND_URL || '*'; 
-app.use(cors({
-  origin: FRONTEND_URL,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
-
-// 3) Connect to PostgreSQL
+// Connect to PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }   // Render requirement for SSL
+  ssl: { rejectUnauthorized: false } // Required by Render.com
 });
 
-// 4) Health-check route
-app.get('/', (req, res) => {
-  res.send('JustAI Jobs Backend is running');
+// Health check to verify if DB is reachable
+app.get('/check-db', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()');  // Simple query to check DB connectivity
+    res.json({ status: 'success', message: 'Database is connected', time: result.rows[0].now });
+  } catch (error) {
+    console.error('Error checking DB connection:', error);
+    res.status(500).json({ status: 'error', message: 'Database connection failed' });
+  }
 });
 
-// 5) Search endpoint under /api/jobs/search
-app.get('/api/jobs/search', async (req, res) => {
-  const searchQuery = req.query.query || '';
+// Example search endpoint (can be used as a reference)
+app.get('/search', async (req, res) => {
+  const searchQuery = req.query.query;
+
   try {
     const result = await pool.query(
-      `SELECT title, salary 
-         FROM jobs 
-        WHERE title ILIKE $1 
-           OR company ILIKE $1`,
+      `SELECT title, salary FROM jobs WHERE title ILIKE $1 OR company ILIKE $1`,
       [`%${searchQuery}%`]
     );
-    res.json({ jobs: result.rows });
-  } catch (err) {
-    console.error('Error executing query', err);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// 6) Start the server
+// Root endpoint (for testing)
+app.get('/', (req, res) => {
+  res.send('JustAI Jobs Backend is running');
+});
+
 app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
