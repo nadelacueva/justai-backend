@@ -50,7 +50,7 @@ app.get('/api/jobs/search', async (req, res) => {
     SELECT title, salary
       FROM jobs
      WHERE title ILIKE $1
-        OR company ILIKE $1
+        OR description ILIKE $1
     LIMIT 50
   `;
 
