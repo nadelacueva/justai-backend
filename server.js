@@ -400,7 +400,7 @@ app.get('/api/community/testimonials', async (req, res) => {
 // REVIEWS for COMMUNITY PAGE API
 // ========================
 
-// API: Get 4 Reviews for Community Page
+// API: Get Top 4 Reviews by Highest Rating for Community Page
 app.get('/api/community/reviews', async (req, res) => {
   try {
     const result = await pool.query(
@@ -411,14 +411,14 @@ app.get('/api/community/reviews', async (req, res) => {
          TO_CHAR(r.created_at, 'YYYY-MM-DD') AS review_date
        FROM Reviews r
        LEFT JOIN Users u ON r.reviewer_id = u.user_id
-       ORDER BY r.created_at DESC
+       ORDER BY r.rating DESC, r.created_at DESC
        LIMIT 4`
     );
 
     res.json(result.rows);
   } catch (error) {
     console.error('Community Reviews Error:', error.message);
-    res.status(500).json({ message: "Server error fetching community reviews." });
+    res.status(500).json({ message: "Server error fetching top reviews." });
   }
 });
 
