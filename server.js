@@ -34,35 +34,33 @@ app.get('/check-db', async (req, res) => {
   }
 });
 
-// ========================
-// SEARCH ENDPOINT
-// ========================
+// API: Search jobs with extra fields
 app.get('/api/jobs/search', async (req, res) => {
-  const searchQuery = req.query.query || '';
-  console.log(`Received search request for: "${searchQuery}"`);
-
-  // Basic validation
-  if (searchQuery.trim() === '') {
-    return res.json({ jobs: [] });
-  }
-
-  const sql = `
-    SELECT title, salary
-      FROM jobs
-     WHERE title ILIKE $1
-        OR description ILIKE $1
-    LIMIT 50
-  `;
+  const { query } = req.query;
 
   try {
-    const { rows } = await pool.query(sql, [`%${searchQuery}%`]);
-    console.log(`Query returned ${rows.length} rows.`);
-    return res.json({ jobs: rows });
-  } catch (err) {
-    console.error('Error executing search query:', err.stack);
-    return res.status(500).json({ error: 'Server error during search' });
+    const result = await pool.query(
+      `SELECT 
+         j.title, 
+         j.salary, 
+         j.description, 
+         u.company, 
+         TO_CHAR(j.created_at, 'YYYY-MM-DD') AS posted_date
+       FROM Jobs j
+       LEFT JOIN Users u ON j.employer_id = u.user_id
+       WHERE (j.title ILIKE $1 OR j.description ILIKE $1)
+       AND j.job_status = 'Open'
+       ORDER BY j.created_at DESC`,
+      [`%${query}%`]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Job Search Error:', error.message);
+    res.status(500).json({ message: "Server error searching jobs." });
   }
 });
+
 
 
 
