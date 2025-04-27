@@ -143,28 +143,46 @@ app.post('/api/login', async (req, res) => {
 // ========================
 // FETCH TOP SALARY JOBS ENDPOINT
 // ========================
-// API to fetch top jobs with optional limit
-app.get('/api/jobs', async (req, res) => {
-  let { limit } = req.query;
-
+// API: Get Top 3 Highest Salary Jobs
+app.get('/api/jobs/top-salary', async (req, res) => {
   try {
-    // Default limit if not provided
-    limit = limit ? parseInt(limit) : 10;
-
     const result = await pool.query(
-      `SELECT * FROM Jobs 
+      `SELECT title, description, salary, job_type
+       FROM Jobs
        WHERE job_status = 'Open'
        ORDER BY salary DESC
-       LIMIT $1`,
-      [limit]
+       LIMIT 3`
     );
 
     res.json(result.rows);
   } catch (error) {
-    console.error('Jobs Fetch Error:', error.message);
-    res.status(500).json({ message: "Server error fetching jobs." });
+    console.error('Top Salary Jobs Error:', error.message);
+    res.status(500).json({ message: "Server error fetching top salary jobs." });
   }
 });
+
+// ========================
+// FETCH TOP NEWEST POSTED JOBS ENDPOINT
+// ========================
+
+// API: Get Top 3 Newest Posted Jobs
+app.get('/api/jobs/newest', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT title, description, salary, job_type
+       FROM Jobs
+       WHERE job_status = 'Open'
+       ORDER BY created_at DESC
+       LIMIT 3`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Newest Jobs Error:', error.message);
+    res.status(500).json({ message: "Server error fetching newest jobs." });
+  }
+});
+
 
 
 
