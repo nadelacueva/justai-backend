@@ -367,6 +367,65 @@ app.get('/api/users/me/job-applications', async (req, res) => {
 });
 
 
+
+
+// ========================
+// TESTIMONIALS FOR COMMUNITY
+// ========================
+// API: Get 4 Testimonials for Community Page
+app.get('/api/community/testimonials', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         t.content AS testimonial,
+         u.name AS user_name,
+         u.company AS company_name
+       FROM Testimonials t
+       LEFT JOIN Users u ON t.user_id = u.user_id
+       WHERE t.to_display = TRUE
+       ORDER BY t.created_at DESC
+       LIMIT 4`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Community Testimonials Error:', error.message);
+    res.status(500).json({ message: "Server error fetching community testimonials." });
+  }
+});
+
+
+
+// ========================
+// REVIEWS for COMMUNITY PAGE API
+// ========================
+
+// API: Get 4 Reviews for Community Page
+app.get('/api/community/reviews', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         r.comment AS review_body,
+         r.rating,
+         u.name AS reviewer_name,
+         TO_CHAR(r.created_at, 'YYYY-MM-DD') AS review_date
+       FROM Reviews r
+       LEFT JOIN Users u ON r.reviewer_id = u.user_id
+       ORDER BY r.created_at DESC
+       LIMIT 4`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Community Reviews Error:', error.message);
+    res.status(500).json({ message: "Server error fetching community reviews." });
+  }
+});
+
+
+
+
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
