@@ -204,11 +204,165 @@ app.get('/api/jobs/search', async (req, res) => {
 
 
 
+// ========================
+// USER PROFILE INFO ENDPOINT
+// ========================
+// API: Get Dashboard Profile Info (dynamic for Employer or Worker)
+app.get('/api/users/me', async (req, res) => {
+  const { user_id } = req.query;
 
+  try {
+    // First fetch user's basic info
+    const userResult = await pool.query(
+      `SELECT name, role, company, account_type, rating
+       FROM Users
+       WHERE user_id = $1`,
+      [user_id]
+    );
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const user = userResult.rows[0];
+    const isEmployer = user.account_type === 'Employer';
+
+    let dashboardData = { 
+      name: user.name,
+      role: user.role,
+      company: user.company,
+      rating: user.rating,
+      account_type: user.account_type
+    };
+
+    if (!isEmployer) {
+      // Worker Metrics
+      const workerResult = await pool.query(
+        `SELECT 
+           COALESCE(SUM(hours_worked), 0) AS total_hours_worked,
+           COALESCE(SUM(amount) FILTER (WHERE status = 'Paid'), 0) AS total_earnings,
+           COALESCE(SUM(amount) FILTER (WHERE status = 'Pending'), 0) AS pending_payment
+         FROM Payments
+         WHERE worker_id = $1`,
+        [user_id]
+      );
+
+      dashboardData = {
+        ...dashboardData,
+        total_hours_worked: workerResult.rows[0].total_hours_worked,
+        total_earnings: workerResult.rows[0].total_earnings,
+        pending_payment: workerResult.rows[0].pending_payment
+      };
+
+    } else {
+      // Employer Metrics
+      const employerResult = await pool.query(
+        `SELECT 
+           COALESCE(SUM(p.hours_worked), 0) AS total_hours_worked,
+           COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'Paid'), 0) AS total_jobs_paid
+         FROM Payments p
+         JOIN Jobs j ON p.job_id = j.job_id
+         WHERE j.employer_id = $1`,
+        [user_id]
+      );
+
+      dashboardData = {
+        ...dashboardData,
+        total_hours_worked: employerResult.rows[0].total_hours_worked,
+        total_jobs_paid: employerResult.rows[0].total_jobs_paid
+      };
+    }
+
+    res.json(dashboardData);
+
+  } catch (error) {
+    console.error('Dashboard Profile Error:', error.message);
+    res.status(500).json({ message: "Server error fetching dashboard profile." });
+  }
 });
 
+
+
+// ========================
+// USER REVIEWS INFO ENDPOINT
+// ========================
+// API: Get Reviews for Logged-in User
+app.get('/api/users/me/reviews', async (req, res) => {
+  const { user_id } = req.query;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+         r.comment AS review_body,
+         r.rating,
+         u.name AS reviewer_name,
+         TO_CHAR(r.created_at, 'YYYY-MM-DD') AS review_date
+       FROM Reviews r
+       LEFT JOIN Users u ON r.reviewer_id = u.user_id
+       WHERE r.reviewee_id = $1
+       ORDER BY r.created_at DESC`,
+      [user_id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('User Reviews Error:', error.message);
+    res.status(500).json({ message: "Server error fetching reviews." });
+  }
+});
+
+// ========================
+// USER APPLICATIONS INFO ENDPOINT
+// ========================
+// API: Get Applications submitted by Worker
+app.get('/api/users/me/applications', async (req, res) => {
+  const { user_id } = req.query;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+         j.title AS job_title,
+         j.salary,
+         j.description AS job_description,
+         TO_CHAR(a.applied_at, 'YYYY-MM-DD') AS applied_date
+       FROM Applications a
+       LEFT JOIN Jobs j ON a.job_id = j.job_id
+       WHERE a.worker_id = $1
+       ORDER BY a.applied_at DESC`,
+      [user_id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('User Applications Error:', error.message);
+    res.status(500).json({ message: "Server error fetching worker applications." });
+  }
+});
+
+// API: Get Applications received by Employer for their jobs
+app.get('/api/users/me/job-applications', async (req, res) => {
+  const { user_id } = req.query;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+         a.status,
+         u.name AS applicant_name,
+         j.title AS job_title,
+         j.salary,
+         TO_CHAR(a.applied_at, 'YYYY-MM-DD') AS applied_date
+       FROM Applications a
+       LEFT JOIN Jobs j ON a.job_id = j.job_id
+       LEFT JOIN Users u ON a.worker_id = u.user_id
+       WHERE j.employer_id = $1
+       ORDER BY a.applied_at DESC`,
+      [user_id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Employer Job Applications Error:', error.message);
+    res.status(500).json({ message: "Server error fetching employer job applications." });
+  }
+});
 
