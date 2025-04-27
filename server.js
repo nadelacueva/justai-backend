@@ -34,34 +34,6 @@ app.get('/check-db', async (req, res) => {
   }
 });
 
-// API: Search jobs with extra fields
-app.get('/api/jobs/search', async (req, res) => {
-  const { query } = req.query;
-
-  try {
-    const result = await pool.query(
-      `SELECT 
-         j.title, 
-         j.salary, 
-         j.description, 
-         u.company, 
-         TO_CHAR(j.created_at, 'YYYY-MM-DD') AS posted_date
-       FROM Jobs j
-       LEFT JOIN Users u ON j.employer_id = u.user_id
-       WHERE (j.title ILIKE $1 OR j.description ILIKE $1)
-       AND j.job_status = 'Open'
-       ORDER BY j.created_at DESC`,
-      [`%${query}%`]
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Job Search Error:', error.message);
-    res.status(500).json({ message: "Server error searching jobs." });
-  }
-});
-
-
 
 
 // ========================
@@ -186,6 +158,48 @@ app.get('/api/jobs/newest', async (req, res) => {
     res.status(500).json({ message: "Server error fetching newest jobs." });
   }
 });
+
+
+// ========================
+// JOB SEARCH ENDPOINT
+// ========================
+
+// Updated API: Search jobs with optional job_type filter
+app.get('/api/jobs/search', async (req, res) => {
+  const { query, job_type } = req.query;
+
+  try {
+    let sql = `
+      SELECT 
+        j.title, 
+        j.salary, 
+        j.description, 
+        u.company, 
+        TO_CHAR(j.created_at, 'YYYY-MM-DD') AS posted_date
+      FROM Jobs j
+      LEFT JOIN Users u ON j.employer_id = u.user_id
+      WHERE (j.title ILIKE $1 OR j.description ILIKE $1)
+      AND j.job_status = 'Open'
+    `;
+
+    const values = [`%${query}%`];
+
+    if (job_type) {
+      sql += ` AND j.job_type = $2`;
+      values.push(job_type);
+    }
+
+    sql += ` ORDER BY j.created_at DESC`;
+
+    const result = await pool.query(sql, values);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Job Search Error:', error.message);
+    res.status(500).json({ message: "Server error searching jobs." });
+  }
+});
+
 
 
 
