@@ -140,6 +140,35 @@ app.post('/api/login', async (req, res) => {
 
 
 
+// ========================
+// FETCH TOP SALARY JOBS ENDPOINT
+// ========================
+// API to fetch top jobs with optional limit
+app.get('/api/jobs', async (req, res) => {
+  let { limit } = req.query;
+
+  try {
+    // Default limit if not provided
+    limit = limit ? parseInt(limit) : 10;
+
+    const result = await pool.query(
+      `SELECT * FROM Jobs 
+       WHERE job_status = 'Open'
+       ORDER BY salary DESC
+       LIMIT $1`,
+      [limit]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Jobs Fetch Error:', error.message);
+    res.status(500).json({ message: "Server error fetching jobs." });
+  }
+});
+
+
+
+
 
 // Start server
 app.listen(PORT, () => {
