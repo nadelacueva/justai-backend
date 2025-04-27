@@ -64,7 +64,44 @@ app.get('/api/jobs/search', async (req, res) => {
   }
 });
 
+
+
+// ========================
+// REGISTER ENDPOINT
+// ========================
+app.post('/api/register', async (req, res) => {
+  const { name, email, password, account_type } = req.body;
+
+  if (!name || !email || !password || !account_type) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    // Check if email already exists
+    const userExists = await pool.query('SELECT * FROM Users WHERE email = $1', [email]);
+    if (userExists.rows.length > 0) {
+      return res.status(400).json({ message: "Email already registered." });
+    }
+
+    // Insert new user
+    await pool.query(
+      `INSERT INTO Users (name, email, password, account_type, status, created_at, modified_at)
+       VALUES ($1, $2, $3, $4, 'Active', NOW(), NOW())`,
+      [name, email, password, account_type]
+    );
+
+    res.status(201).json({ message: "User registered successfully." });
+  } catch (error) {
+    console.error('Register Error:', error.message);
+    res.status(500).json({ message: "Server error during registration." });
+  }
+});
+
+
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
+
