@@ -97,6 +97,47 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// ========================
+// LOGIN ENDPOINT
+// ========================
+// API to login user
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required." });
+  }
+
+  try {
+    const user = await pool.query('SELECT * FROM Users WHERE email = $1', [email]);
+
+    if (user.rows.length === 0) {
+      return res.status(400).json({ message: "Invalid email or password." });
+    }
+
+    const dbUser = user.rows[0];
+
+    // For now, simple plain text password matching
+    if (dbUser.password !== password) {
+      return res.status(400).json({ message: "Invalid email or password." });
+    }
+
+    res.status(200).json({
+      message: "Login successful.",
+      user: {
+        user_id: dbUser.user_id,
+        name: dbUser.name,
+        email: dbUser.email,
+        account_type: dbUser.account_type
+      }
+    });
+  } catch (error) {
+    console.error('Login Error:', error.message);
+    res.status(500).json({ message: "Server error during login." });
+  }
+});
+
+
 
 
 // Start server
