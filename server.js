@@ -69,10 +69,11 @@ app.get('/api/jobs/search', async (req, res) => {
 // ========================
 // REGISTER ENDPOINT
 // ========================
+// Updated API to register new user with role
 app.post('/api/register', async (req, res) => {
-  const { name, email, password, account_type } = req.body;
+  const { name, email, password, account_type, role } = req.body;
 
-  if (!name || !email || !password || !account_type) {
+  if (!name || !email || !password || !account_type || !role) {
     return res.status(400).json({ message: "All fields are required." });
   }
 
@@ -85,9 +86,9 @@ app.post('/api/register', async (req, res) => {
 
     // Insert new user
     await pool.query(
-      `INSERT INTO Users (name, email, password, account_type, status, created_at, modified_at)
-       VALUES ($1, $2, $3, $4, 'Active', NOW(), NOW())`,
-      [name, email, password, account_type]
+      `INSERT INTO Users (name, email, password, account_type, role, status, created_at, modified_at)
+       VALUES ($1, $2, $3, $4, $5, 'Active', NOW(), NOW())`,
+      [name, email, password, account_type, role]
     );
 
     res.status(201).json({ message: "User registered successfully." });
