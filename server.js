@@ -69,12 +69,18 @@ app.get('/api/jobs/search', async (req, res) => {
 // ========================
 // REGISTER ENDPOINT
 // ========================
-// Updated API to register new user with role
+// API: Register User (Updated with dynamic validation)
 app.post('/api/register', async (req, res) => {
-  const { name, email, password, account_type, role } = req.body;
+  const { name, email, password, account_type, role, company } = req.body;
 
-  if (!name || !email || !password || !account_type || !role) {
-    return res.status(400).json({ message: "All fields are required." });
+  if (!name || !email || !password || !account_type) {
+    return res.status(400).json({ message: "Name, email, password, and account type are required." });
+  }
+
+  if (account_type === "Employer") {
+    if (!role || !company) {
+      return res.status(400).json({ message: "Role and Company are required for Employers." });
+    }
   }
 
   try {
@@ -86,9 +92,9 @@ app.post('/api/register', async (req, res) => {
 
     // Insert new user
     await pool.query(
-      `INSERT INTO Users (name, email, password, account_type, role, status, created_at, modified_at)
-       VALUES ($1, $2, $3, $4, $5, 'Active', NOW(), NOW())`,
-      [name, email, password, account_type, role]
+      `INSERT INTO Users (name, email, password, account_type, role, company, status, created_at, modified_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'Active', NOW(), NOW())`,
+      [name, email, password, account_type, role || null, company || null]
     );
 
     res.status(201).json({ message: "User registered successfully." });
