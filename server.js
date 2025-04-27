@@ -423,6 +423,34 @@ app.get('/api/community/reviews', async (req, res) => {
 });
 
 
+// ========================
+// Support Inquiry API
+// ========================
+
+
+// API: Submit Support Inquiry
+app.post('/api/support', async (req, res) => {
+  const { user_id, category, email, content } = req.body;
+
+  if (!category || !email || !content) {
+    return res.status(400).json({ message: "Category, email, and content are required." });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO ContactMessages 
+         (user_id, category, email, content, status, created_at, modified_at)
+       VALUES ($1, $2, $3, $4, 'Open', NOW(), NOW())`,
+      [user_id || null, category, email, content]
+    );
+
+    res.status(201).json({ message: "Support inquiry submitted successfully." });
+  } catch (error) {
+    console.error('Support Inquiry Error:', error.message);
+    res.status(500).json({ message: "Server error submitting inquiry." });
+  }
+});
+
 
 
 
