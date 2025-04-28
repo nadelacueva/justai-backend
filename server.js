@@ -41,7 +41,7 @@ app.get('/check-db', async (req, res) => {
 // ========================
 // API: Register User (Updated with dynamic validation)
 app.post('/api/register', async (req, res) => {
-  const { account_type, name, email, password, company, role } = req.body;
+  const { account_type, name, email, password, company, role } = req.body || {};
 
   if (!name || !email || !password || !account_type) {
     return res.status(400).json({ message: "Name, email, password, and account type are required." });
