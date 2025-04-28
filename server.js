@@ -194,6 +194,12 @@ app.get('/api/jobs/search', async (req, res) => {
       values.push(job_type);
     }
 
+    if (sortType === 'salary') {
+      sql += ' ORDER BY j.salary DESC';  // Sort by highest salary
+    } else {
+      sql += ' ORDER BY j.created_at DESC';  // Default to newest
+    }
+
     sql += ` ORDER BY j.created_at DESC`;
 
     const result = await pool.query(sql, values);
