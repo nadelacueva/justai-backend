@@ -166,7 +166,7 @@ app.get('/api/jobs/newest', async (req, res) => {
 
 // Updated API: Search jobs with optional job_type filter
 app.get('/api/jobs/search', async (req, res) => {
-  const { query, job_type, sortType = 'created_at' } = req.query;  // Add default for sortType
+  const { query, job_type, sort = 'newest' } = req.query;  // Default to 'newest' for sort
 
   // Check if the 'query' parameter is provided
   if (!query) {
@@ -194,8 +194,8 @@ app.get('/api/jobs/search', async (req, res) => {
       values.push(job_type);
     }
 
-    // Conditional sorting based on sortType
-    if (sortType === 'salary') {
+    // Conditional sorting based on sort
+    if (sort === 'salary') {
       sql += ' ORDER BY j.salary DESC';  // Sort by highest salary
     } else {
       sql += ' ORDER BY j.created_at DESC';  // Default to newest
