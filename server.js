@@ -35,7 +35,6 @@ app.get('/check-db', async (req, res) => {
 });
 
 
-
 // ========================
 // REGISTER ENDPOINT
 // ========================
