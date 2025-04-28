@@ -81,7 +81,6 @@ app.post('/api/register', async (req, res) => {
 // API to login user
 const jwt = require('jsonwebtoken');
 
-// inside your POST /api/login route:
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -90,9 +89,8 @@ app.post('/api/login', async (req, res) => {
   }
 
   try {
-    // Query the database for the user with the necessary details
     const user = await pool.query(
-      `SELECT name, account_type, profile_picture, rating, status, company, password, user_id
+      `SELECT user_id, name, email, account_type, profile_picture, rating, status, company, password
        FROM Users 
        WHERE email = $1`, 
       [email]
@@ -104,22 +102,19 @@ app.post('/api/login', async (req, res) => {
 
     const dbUser = user.rows[0];
 
-    // For now, simple plain text password matching
     if (dbUser.password !== password) {
       return res.status(400).json({ message: "Invalid email or password." });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { user_id: dbUser.user_id, email: dbUser.email, account_type: dbUser.account_type },
-      process.env.JWT_SECRET, // Secret key from environment variables
-      { expiresIn: '24h' } // Token expires in 24 hours
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
     );
 
-    // Respond with the token and user info
     res.status(200).json({
       message: "Login successful.",
-      token, // Send the token
+      token,
       user: {
         user_id: dbUser.user_id,
         name: dbUser.name,
@@ -137,6 +132,7 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ message: "Server error during login." });
   }
 });
+
 
 
 // ========================
@@ -238,11 +234,21 @@ app.get('/api/jobs/search', async (req, res) => {
 // USER PROFILE INFO ENDPOINT
 // ========================
 // API: Get Dashboard Profile Info (dynamic for Employer or Worker)
-app.get('/api/users/me', async (req, res) => {
-  const { user_id } = req.query;
+const jwt = require('jsonwebtoken');
 
+app.get('/api/users/me', async (req, res) => {
   try {
-    // First fetch user's basic info
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: "Authorization header missing." });
+    }
+
+    const token = authHeader.split(' ')[1]; // Get the token part after "Bearer"
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user_id = decoded.user_id; // ✅ Extract from token, not query string
+
+    // Fetch user's basic info
     const userResult = await pool.query(
       `SELECT name, role, company, account_type, rating
        FROM Users
