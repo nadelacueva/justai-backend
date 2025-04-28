@@ -55,16 +55,16 @@ app.post('/api/register', async (req, res) => {
 
   try {
     // Check if email already exists
-    const userExists = await pool.query('SELECT * FROM Users WHERE email = $3', [email]);
+    const userExists = await pool.query('SELECT * FROM Users WHERE email = $1', [email]);
     if (userExists.rows.length > 0) {
       return res.status(400).json({ message: "Email already registered." });
     }
 
     // Insert new user
     await pool.query(
-      `INSERT INTO Users (name, email, password, account_type, role, company, status, created_at, modified_at)
-       VALUES ($2, $3, $4, $1, $6, $5, 'Active', NOW(), NOW())`,
-      [name, email, password, account_type, role || null, company || null]
+      `INSERT INTO Users (account_type, name, email, password, company, role, status, created_at, modified_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'Active', NOW(), NOW())`,
+      [account_type, name, email, password, company || null, role || null]
     );
 
     res.status(201).json({ message: "User registered successfully." });
