@@ -63,7 +63,7 @@ app.post('/api/register', async (req, res) => {
     // Insert new user
     await pool.query(
       `INSERT INTO Users (name, email, password, account_type, role, company, status, created_at, modified_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'Active', NOW(), NOW())`,
+       VALUES ($2, $3, $4, $1, $6, $5, 'Active', NOW(), NOW())`,
       [name, email, password, account_type, role || null, company || null]
     );
 
