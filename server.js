@@ -74,6 +74,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+
 // ========================
 // LOGIN ENDPOINT
 // ========================
@@ -89,7 +90,13 @@ app.post('/api/login', async (req, res) => {
   }
 
   try {
-    const user = await pool.query('SELECT * FROM Users WHERE email = $1', [email]);
+    // Query the database for the user with the necessary details
+    const user = await pool.query(
+      `SELECT name, account_type, profile_picture, rating, status, company, password, user_id
+       FROM Users 
+       WHERE email = $1`, 
+      [email]
+    );
 
     if (user.rows.length === 0) {
       return res.status(400).json({ message: "Invalid email or password." });
@@ -117,7 +124,11 @@ app.post('/api/login', async (req, res) => {
         user_id: dbUser.user_id,
         name: dbUser.name,
         email: dbUser.email,
-        account_type: dbUser.account_type
+        account_type: dbUser.account_type,
+        profile_picture: dbUser.profile_picture,
+        rating: dbUser.rating,
+        status: dbUser.status,
+        company: dbUser.company
       }
     });
 
@@ -126,7 +137,6 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ message: "Server error during login." });
   }
 });
-
 
 
 // ========================
