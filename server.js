@@ -364,11 +364,19 @@ app.get('/api/users/me/reviews', authenticateToken, async (req, res) => {
 // ========================
 // USER APPLICATIONS INFO ENDPOINT
 // ========================
+
 // API: Get Applications submitted by Worker
 app.get('/api/users/me/applications', async (req, res) => {
-  const { user_id } = req.query;
+  const token = req.headers['authorization']?.split(' ')[1]; // Extract token from the Authorization header
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized. No token provided.' });
+  }
 
   try {
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user_id = decoded.user_id; // Extract user_id from the token
+
     const result = await pool.query(
       `SELECT 
          j.title AS job_title,
@@ -379,7 +387,7 @@ app.get('/api/users/me/applications', async (req, res) => {
        LEFT JOIN Jobs j ON a.job_id = j.job_id
        WHERE a.worker_id = $1
        ORDER BY a.applied_at DESC`,
-      [user_id]
+      [user_id] // Use user_id from JWT token
     );
 
     res.json(result.rows);
@@ -391,9 +399,16 @@ app.get('/api/users/me/applications', async (req, res) => {
 
 // API: Get Applications received by Employer for their jobs
 app.get('/api/users/me/job-applications', async (req, res) => {
-  const { user_id } = req.query;
+  const token = req.headers['authorization']?.split(' ')[1]; // Extract token from the Authorization header
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized. No token provided.' });
+  }
 
   try {
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user_id = decoded.user_id; // Extract user_id from the token
+
     const result = await pool.query(
       `SELECT 
          a.status,
@@ -406,7 +421,7 @@ app.get('/api/users/me/job-applications', async (req, res) => {
        LEFT JOIN Users u ON a.worker_id = u.user_id
        WHERE j.employer_id = $1
        ORDER BY a.applied_at DESC`,
-      [user_id]
+      [user_id] // Use user_id from JWT token
     );
 
     res.json(result.rows);
@@ -416,7 +431,71 @@ app.get('/api/users/me/job-applications', async (req, res) => {
   }
 });
 
+// ========================
+// USER REVIEWS ENDPOINT
+// ========================
 
+app.get('/api/users/me/reviews', async (req, res) => {
+  const token = req.headers['authorization']?.split(' ')[1]; // Extract token from the Authorization header
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized. No token provided.' });
+  }
+
+  try {
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user_id = decoded.user_id; // Extract user_id from the token
+
+    const result = await pool.query(
+      `SELECT 
+         r.comment AS review_body,
+         r.rating,
+         u.name AS reviewer_name,
+         TO_CHAR(r.created_at, 'YYYY-MM-DD') AS review_date
+       FROM Reviews r
+       LEFT JOIN Users u ON r.reviewer_id = u.user_id
+       WHERE r.reviewee_id = $1
+       ORDER BY r.created_at DESC`,
+      [user_id] // Use user_id from JWT token
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('User Reviews Error:', error.message);
+    res.status(500).json({ message: "Server error fetching reviews." });
+  }
+});
+
+// ========================
+// USER PROFILE ENDPOINT
+// ========================
+
+// API: Get User Profile
+app.get('/api/users/me', async (req, res) => {
+  const token = req.headers['authorization']?.split(' ')[1]; // Extract token from the Authorization header
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized. No token provided.' });
+  }
+
+  try {
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user_id = decoded.user_id; // Extract user_id from the token
+
+    const result = await pool.query(
+      `SELECT 
+         user_id, name, email, account_type, profile_picture, rating, status, company
+       FROM Users 
+       WHERE user_id = $1`,
+      [user_id] // Use user_id from JWT token
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('User Profile Error:', error.message);
+    res.status(500).json({ message: "Server error fetching user profile." });
+  }
+});
 
 
 // ========================
