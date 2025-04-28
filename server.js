@@ -78,6 +78,9 @@ app.post('/api/register', async (req, res) => {
 // LOGIN ENDPOINT
 // ========================
 // API to login user
+const jwt = require('jsonwebtoken');
+
+// inside your POST /api/login route:
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -99,8 +102,17 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password." });
     }
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { user_id: dbUser.user_id, email: dbUser.email, account_type: dbUser.account_type },
+      process.env.JWT_SECRET, // Secret key from environment variables
+      { expiresIn: '24h' } // Token expires in 24 hours
+    );
+
+    // Respond with the token and user info
     res.status(200).json({
       message: "Login successful.",
+      token, // Send the token
       user: {
         user_id: dbUser.user_id,
         name: dbUser.name,
@@ -108,6 +120,7 @@ app.post('/api/login', async (req, res) => {
         account_type: dbUser.account_type
       }
     });
+
   } catch (error) {
     console.error('Login Error:', error.message);
     res.status(500).json({ message: "Server error during login." });
