@@ -168,6 +168,11 @@ app.get('/api/jobs/newest', async (req, res) => {
 app.get('/api/jobs/search', async (req, res) => {
   const { query, job_type } = req.query;
 
+  // Check if the 'query' parameter is provided
+  if (!query) {
+    return res.status(400).json({ message: "Search query is required." });
+  }
+
   try {
     let sql = `
       SELECT 
@@ -199,9 +204,6 @@ app.get('/api/jobs/search', async (req, res) => {
     res.status(500).json({ message: "Server error searching jobs." });
   }
 });
-
-
-
 
 
 // ========================
