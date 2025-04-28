@@ -233,8 +233,6 @@ app.get('/api/jobs/search', async (req, res) => {
 // USER PROFILE INFO ENDPOINT
 // ========================
 // API: Get Dashboard Profile Info (dynamic for Employer or Worker)
-const jwt = require('jsonwebtoken');
-
 app.get('/api/users/me', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
