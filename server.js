@@ -320,8 +320,24 @@ app.get('/api/users/me', async (req, res) => {
 // USER REVIEWS INFO ENDPOINT
 // ========================
 // API: Get Reviews for Logged-in User
-app.get('/api/users/me/reviews', async (req, res) => {
-  const { user_id } = req.query;
+// Middleware to authenticate JWT token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: 'Invalid token' });
+
+    req.user = user; // Attach the user info to request object
+    next();
+  });
+}
+
+// API to get reviews for the logged-in user
+app.get('/api/users/me/reviews', authenticateToken, async (req, res) => {
+  const user_id = req.user.user_id; // Get user_id from the decoded JWT
 
   try {
     const result = await pool.query(
@@ -334,7 +350,7 @@ app.get('/api/users/me/reviews', async (req, res) => {
        LEFT JOIN Users u ON r.reviewer_id = u.user_id
        WHERE r.reviewee_id = $1
        ORDER BY r.created_at DESC`,
-      [user_id]
+      [user_id] // Pass the logged-in user's user_id
     );
 
     res.json(result.rows);
@@ -343,6 +359,7 @@ app.get('/api/users/me/reviews', async (req, res) => {
     res.status(500).json({ message: "Server error fetching reviews." });
   }
 });
+
 
 // ========================
 // USER APPLICATIONS INFO ENDPOINT
