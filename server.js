@@ -564,7 +564,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // API: Submit Support Inquiry
-app.post('/api/support', async (req, res) => {
+app.post('/api/community/support', async (req, res) => {
   const { user_id, category, email, content } = req.body;
 
   // Input validation
