@@ -555,44 +555,32 @@ app.get('/api/community/reviews', async (req, res) => {
 // ========================
 // Support Inquiry API
 // ========================
-const bodyParser = require('body-parser');
-// Allow cross-origin requests for development
-app.use(cors());
-
-// Middleware to parse incoming requests
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// API: Submit Support Inquiry
-app.post('/api/community/support', async (req, res) => {
+app.post('/api/support', async (req, res) => {
   const { user_id, category, email, content } = req.body;
 
-  // Input validation
+  // Basic validation
   if (!category || !email || !content) {
     return res.status(400).json({ message: "Category, email, and content are required." });
   }
 
   try {
-    // If user_id is not passed, it will default to null
     await pool.query(
-      `INSERT INTO contactmessages 
-         (user_id, category, email, content, status, created_at, modified_at)
-       VALUES ($1, $2, $3, $4, 'Open', NOW(), NOW())`,
-      [user_id || null, category, email, content]
+      `INSERT INTO ContactMessages 
+         (message_id, user_id, category, email, content, status, created_at, modified_at)
+       VALUES (uuid_generate_v4(), $1, $2, $3, $4, 'Open', NOW(), NOW())`,
+      [
+        user_id || null,  // Allow support tickets from guests (no user_id)
+        category,
+        email,
+        content
+      ]
     );
 
-
-    // Success response
     res.status(201).json({ message: "Support inquiry submitted successfully." });
   } catch (error) {
     console.error('Support Inquiry Error:', error.message);
-    res.status(500).json({ message: "Server error submitting inquiry." });
+    res.status(500).json({ message: "Server error submitting support inquiry." });
   }
-});
-
-// Start server on port 3000 (or whatever your backend port is)
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
 });
 
 
