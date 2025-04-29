@@ -555,8 +555,6 @@ app.get('/api/community/reviews', async (req, res) => {
 // ========================
 // Support Inquiry API
 // ========================
-
-
 // API: Submit Support Inquiry
 app.post('/api/support', async (req, res) => {
   const { user_id, category, email, content } = req.body;
@@ -578,9 +576,10 @@ app.post('/api/support', async (req, res) => {
     res.status(201).json({ message: "Support inquiry submitted successfully." });
   } catch (error) {
     console.error('Support Inquiry Error:', error.message);
-    res.status(500).json({ message: "Server error submitting inquiry." });
+    res.status(500).json({ message: "Server error submitting inquiry." }); // Ensure JSON response
   }
 });
+
 
 
 
