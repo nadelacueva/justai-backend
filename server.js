@@ -555,10 +555,25 @@ app.get('/api/community/reviews', async (req, res) => {
 // ========================
 // Support Inquiry API
 // ========================
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const pool = require('./db'); // Assuming pool is your database connection
+
+const app = express();
+
+// Allow cross-origin requests for development
+app.use(cors());
+
+// Middleware to parse incoming requests
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 // API: Submit Support Inquiry
 app.post('/api/support', async (req, res) => {
   const { user_id, category, email, content } = req.body;
 
+  // Input validation
   if (!category || !email || !content) {
     return res.status(400).json({ message: "Category, email, and content are required." });
   }
@@ -572,12 +587,19 @@ app.post('/api/support', async (req, res) => {
       [user_id || null, category, email, content]
     );
 
+    // Success response
     res.status(201).json({ message: "Support inquiry submitted successfully." });
   } catch (error) {
     console.error('Support Inquiry Error:', error.message);
     res.status(500).json({ message: "Server error submitting inquiry." });
   }
 });
+
+// Start server on port 3000 (or whatever your backend port is)
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
+
 
 
 
