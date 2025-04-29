@@ -556,9 +556,6 @@ app.get('/api/community/reviews', async (req, res) => {
 // Support Inquiry API
 // ========================
 const bodyParser = require('body-parser');
-
-const app = express();
-
 // Allow cross-origin requests for development
 app.use(cors());
 
