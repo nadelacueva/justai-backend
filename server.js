@@ -555,10 +555,7 @@ app.get('/api/community/reviews', async (req, res) => {
 // ========================
 // Support Inquiry API
 // ========================
-const express = require('express');
-const cors = require('cors');
 const bodyParser = require('body-parser');
-const pool = require('./db'); // Assuming pool is your database connection
 
 const app = express();
 
