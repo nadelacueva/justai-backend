@@ -575,11 +575,12 @@ app.post('/api/community/support', async (req, res) => {
   try {
     // If user_id is not passed, it will default to null
     await pool.query(
-      `INSERT INTO ContactMessages 
+      `INSERT INTO contactmessages 
          (user_id, category, email, content, status, created_at, modified_at)
        VALUES ($1, $2, $3, $4, 'Open', NOW(), NOW())`,
       [user_id || null, category, email, content]
     );
+
 
     // Success response
     res.status(201).json({ message: "Support inquiry submitted successfully." });
