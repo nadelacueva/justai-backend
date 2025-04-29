@@ -561,11 +561,13 @@ app.get('/api/community/reviews', async (req, res) => {
 app.post('/api/support', async (req, res) => {
   const { user_id, category, email, content } = req.body;
 
+  // Validate the incoming data
   if (!category || !email || !content) {
     return res.status(400).json({ message: "Category, email, and content are required." });
   }
 
   try {
+    // Insert the support inquiry into the database
     await pool.query(
       `INSERT INTO ContactMessages 
          (user_id, category, email, content, status, created_at, modified_at)
@@ -579,7 +581,6 @@ app.post('/api/support', async (req, res) => {
     res.status(500).json({ message: "Server error submitting inquiry." });
   }
 });
-
 
 
 
